@@ -1,59 +1,163 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Expense Tracker
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A daily-expense tracker built with Laravel 12. Set a budget for the day, log your expenses, review them day by day, and export everything to CSV.
 
-## About Laravel
+**The database is SQLite — you do not need XAMPP, MySQL, or phpMyAdmin.** The database lives in a single file at `database/database.sqlite`, so the app is ready to run with nothing but PHP installed.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Register / log in / log out (session-based auth)
+- Set a daily budget and see how much of it is left
+- Log expenses with an amount, description, and category
+  - Categories: Food, Transportation, Bills, Shopping, Entertainment, Other
+- Edit and delete your own expenses (other users' expenses are off-limits)
+- Daily history page with per-day totals, budget vs. spent, and remaining amount
+- Filter the history by category and date range
+- Export the filtered expenses to CSV
+- Every user only ever sees their own expenses and budgets
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Requirements
 
-## Learning Laravel
+| Requirement | Version |
+|---|---|
+| PHP | 8.2 or newer, with the `pdo_sqlite` extension |
+| Composer | 2.x |
+| Node.js | 20 or newer (for Vite and asset building) |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Check your PHP extensions:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+php -m | grep sqlite
+```
 
-## Laravel Sponsors
+You should see `pdo_sqlite`. (The optional `intl` extension is only needed for the
+`php artisan db:show` / `db:table` size reports — the app itself works without it.)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Installation
 
-### Premium Partners
+```bash
+# 1. Install PHP dependencies
+composer install
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 2. Create the environment file and generate an app key
+cp .env.example .env        # Windows: copy .env.example .env
+php artisan key:generate
 
-## Contributing
+# 3. Create the SQLite database file and build the schema
+touch database/database.sqlite   # Windows: New-Item database\database.sqlite
+php artisan migrate --seed
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 4. Install and build frontend assets
+npm install
+npm run build
+```
 
-## Code of Conduct
+`migrate --seed` creates the schema and one test account:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Email | Password |
+|---|---|
+| `test@example.com` | `password` |
 
-## Security Vulnerabilities
+You can also skip the seed and just register your own account from the UI.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Running the app
 
-## License
+```bash
+composer dev
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This starts the PHP dev server, the queue worker, the log viewer, and Vite all at once,
+and prints the app URL (http://127.0.0.1:8000 by default).
+
+To run just the web server:
+
+```bash
+php artisan serve
+```
+
+## Database
+
+The app uses SQLite by default.
+
+```dotenv
+DB_CONNECTION=sqlite
+```
+
+When `DB_DATABASE` is not set, Laravel uses `database/database.sqlite` automatically. To
+point at a different file, set an absolute path:
+
+```dotenv
+DB_DATABASE=/absolute/path/to/your/database.sqlite
+```
+
+The SQLite connection is tuned for concurrent use (the dev server and the queue worker
+both write to the same file):
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `DB_JOURNAL_MODE` | `WAL` | Write-ahead logging so readers don't block the writer |
+| `DB_BUSY_TIMEOUT` | `5000` | Milliseconds to wait on a locked database before failing |
+
+Both are set in `config/database.php` and can be overridden from `.env`.
+
+### Resetting the database
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+This drops every table, re-runs all migrations, and re-seeds the test user. It is the
+fastest way to get back to a clean state.
+
+The database file itself is ignored by git (`database/.gitignore` ignores `*.sqlite*`),
+so your local data is never committed.
+
+### Migrating data from MySQL
+
+The `mysql` connection is still defined in `config/database.php`, so a one-off import
+from an old MySQL database is possible:
+
+1. Fill in the MySQL credentials in `.env` and comment out `DB_CONNECTION=sqlite`.
+2. Run your export/import queries.
+3. Switch `DB_CONNECTION` back to `sqlite`.
+
+## Tests
+
+```bash
+php artisan test
+```
+
+The test suite runs against an **in-memory** SQLite database (`phpunit.xml` sets
+`DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`), so it never touches your
+development database and needs no external database server.
+
+## Project structure
+
+```
+app/
+  Http/Controllers/
+    Auth/LoginController.php        Login and logout
+    Auth/RegisterController.php     Registration
+    ExpenseController.php           Budgets, expenses, daily view, CSV export
+  Models/
+    Expense.php                     An expense belonging to a user
+    DailyBudget.php                 A per-day budget belonging to a user
+    User.php                        User and their expenses / budgets
+database/
+  migrations/                       Schema (SQLite compatible)
+  seeders/                          Test user
+resources/views/
+  expenses/                         Dashboard and daily history pages
+  auth/                             Login and register pages
+routes/web.php                      All routes
+```
+
+## Useful commands
+
+```bash
+php artisan migrate          # Run pending migrations
+php artisan migrate:fresh    # Rebuild the schema from scratch
+php artisan db:seed          # Seed the test user
+php artisan route:list       # List all routes
+php artisan tinker           # Interactive PHP console with the app booted
+```

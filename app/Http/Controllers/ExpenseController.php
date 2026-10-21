@@ -56,7 +56,7 @@ class ExpenseController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $budgets = $user->dailyBudgets()
+        $budgets = $this->applyDateRange($user->dailyBudgets(), $filters, 'budget_date')
             ->get()
             ->keyBy(fn ($budget) => $budget->budget_date->toDateString());
 
@@ -209,12 +209,17 @@ class ExpenseController extends Controller
             $query->where('category', $filters['category']);
         }
 
+        return $this->applyDateRange($query, $filters, 'expense_date');
+    }
+
+    private function applyDateRange($query, array $filters, string $dateColumn)
+    {
         if (! empty($filters['from'])) {
-            $query->whereDate('expense_date', '>=', $filters['from']);
+            $query->whereDate($dateColumn, '>=', $filters['from']);
         }
 
         if (! empty($filters['to'])) {
-            $query->whereDate('expense_date', '<=', $filters['to']);
+            $query->whereDate($dateColumn, '<=', $filters['to']);
         }
 
         return $query;

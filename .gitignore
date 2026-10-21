@@ -30,9 +30,14 @@ Thumbs.db
 /database/*.sqlite-journal
 /database/*.sqlite-shm
 /database/*.sqlite-wal
+*.sqlite3
+*.db
 
 # Private keys and certificates
 *.pem
 *.key
 *.p12
 *.pfx
+
+# Laravel / IDE helper files generated at runtime
+/storage/framework/lsp-*.php

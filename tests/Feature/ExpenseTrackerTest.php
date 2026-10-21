@@ -290,6 +290,51 @@ class ExpenseTrackerTest extends TestCase
             ->assertDontSee('Bus fare');
     }
 
+    public function test_daily_page_date_filter_excludes_budgets_outside_the_range(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $outside = now()->subDays(5)->toDateString();
+        $inside = now()->subDay()->toDateString();
+
+        DailyBudget::create([
+            'user_id' => $user->id,
+            'amount' => 111.00,
+            'budget_date' => $outside,
+        ]);
+
+        DailyBudget::create([
+            'user_id' => $user->id,
+            'amount' => 500.00,
+            'budget_date' => $inside,
+        ]);
+
+        Expense::create([
+            'user_id' => $user->id,
+            'amount' => 200.00,
+            'description' => 'Inside the range',
+            'category' => 'Food',
+            'expense_date' => $inside,
+        ]);
+
+        $response = $this->get('/daily?from='.$inside.'&to='.$inside)->assertOk();
+
+        $response->assertDontSee('111.00');
+        $response->assertSee('500.00');
+        $response->assertSee('Inside the range');
+
+        $this->assertMatchesRegularExpression(
+            '/Days Tracked<\/span>\s*<strong>1<\/strong>/',
+            $response->getContent()
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/Average Per Day<\/span>\s*<strong>\s*₱200\.00\s*<\/strong>/',
+            $response->getContent()
+        );
+    }
+
     public function test_export_downloads_filtered_csv(): void
     {
         $user = User::factory()->create();
