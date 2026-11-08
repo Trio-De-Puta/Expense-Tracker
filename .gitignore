@@ -30,6 +30,7 @@ Thumbs.db
 /database/*.sqlite-journal
 /database/*.sqlite-shm
 /database/*.sqlite-wal
+/database/backups/
 *.sqlite3
 *.db
 

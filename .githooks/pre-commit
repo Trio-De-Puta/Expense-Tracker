@@ -1,0 +1,38 @@
+#!/bin/sh
+
+blocked_files=""
+
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+
+    # .env.example is a safe template and is intentionally tracked.
+    case "$file" in
+        .env.example|*/.env.example)
+            continue
+            ;;
+    esac
+
+    case "$file" in
+        .env|*/.env|.env.*|*/.env.*| \
+        *.sqlite*|*.sqlite3|*.db| \
+        database/backups/*|*/database/backups/*| \
+        *.key|*.pem|*.p12|*.pfx| \
+        auth.json|*/auth.json| \
+        id_rsa|*/id_rsa|id_ed25519|*/id_ed25519)
+            blocked_files="${blocked_files}  ${file}
+"
+            ;;
+    esac
+done <<EOF
+$(git diff --cached --name-only --diff-filter=ACMR)
+EOF
+
+if [ -n "$blocked_files" ]; then
+    printf '%s\n' "Commit blocked: sensitive local files are staged:" >&2
+    printf '%s' "$blocked_files" >&2
+    printf '\n%s\n' "Unstage them with: git restore --staged <file>" >&2
+    printf '%s\n' "If a secret was previously committed, rotate it and remove it from history." >&2
+    exit 1
+fi
+
+exit 0

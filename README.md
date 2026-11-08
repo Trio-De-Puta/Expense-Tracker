@@ -1,163 +1,120 @@
 # Expense Tracker
 
-A daily-expense tracker built with Laravel 12. Set a budget for the day, log your expenses, review them day by day, and export everything to CSV.
+Expense Tracker is a Laravel web application for manually recording daily income and spending against a daily budget. It does not connect to a bank or import transactions. Each account only sees its own data.
 
-**The database is SQLite — you do not need XAMPP, MySQL, or phpMyAdmin.** The database lives in a single file at `database/database.sqlite`, so the app is ready to run with nothing but PHP installed.
+## How the system works
 
-## Features
+### 1. Visitor entry
 
-- Register / log in / log out (session-based auth)
-- Set a daily budget and see how much of it is left
-- Log expenses with an amount, description, and category
-  - Categories: Food, Transportation, Bills, Shopping, Entertainment, Other
-- Edit and delete your own expenses (other users' expenses are off-limits)
-- Daily history page with per-day totals, budget vs. spent, and remaining amount
-- Filter the history by category and date range
-- Export the filtered expenses to CSV
-- Every user only ever sees their own expenses and budgets
+- `/` is the public landing page. It explains the app and links to registration and login.
+- `/register` creates an account. The user chooses a profile type, then is logged in automatically.
+- `/login` starts a session for an existing account.
+- Authenticated users are sent to `/dashboard` when they visit the landing page.
 
-## Requirements
+### 2. Account profiles
 
-| Requirement | Version |
-|---|---|
-| PHP | 8.2 or newer, with the `pdo_sqlite` extension |
-| Composer | 2.x |
-| Node.js | 20 or newer (for Vite and asset building) |
+The profile chosen at registration changes the defaults and the insights shown on the dashboard.
 
-Check your PHP extensions:
-
-```bash
-php -m | grep sqlite
-```
-
-You should see `pdo_sqlite`. (The optional `intl` extension is only needed for the
-`php artisan db:show` / `db:table` size reports — the app itself works without it.)
-
-## Installation
-
-```bash
-# 1. Install PHP dependencies
-composer install
-
-# 2. Create the environment file and generate an app key
-cp .env.example .env        # Windows: copy .env.example .env
-php artisan key:generate
-
-# 3. Create the SQLite database file and build the schema
-touch database/database.sqlite   # Windows: New-Item database\database.sqlite
-php artisan migrate --seed
-
-# 4. Install and build frontend assets
-npm install
-npm run build
-```
-
-`migrate --seed` creates the schema and one test account:
-
-| Email | Password |
-|---|---|
-| `test@example.com` | `password` |
-
-You can also skip the seed and just register your own account from the UI.
-
-## Running the app
-
-```bash
-composer dev
-```
-
-This starts the PHP dev server, the queue worker, the log viewer, and Vite all at once,
-and prints the app URL (http://127.0.0.1:8000 by default).
-
-To run just the web server:
-
-```bash
-php artisan serve
-```
-
-## Database
-
-The app uses SQLite by default.
-
-```dotenv
-DB_CONNECTION=sqlite
-```
-
-When `DB_DATABASE` is not set, Laravel uses `database/database.sqlite` automatically. To
-point at a different file, set an absolute path:
-
-```dotenv
-DB_DATABASE=/absolute/path/to/your/database.sqlite
-```
-
-The SQLite connection is tuned for concurrent use (the dev server and the queue worker
-both write to the same file):
-
-| Setting | Default | Purpose |
+| Profile | Intended use | Default behaviour |
 |---|---|---|
-| `DB_JOURNAL_MODE` | `WAL` | Write-ahead logging so readers don't block the writer |
-| `DB_BUSY_TIMEOUT` | `5000` | Milliseconds to wait on a locked database before failing |
+| Student | Allowance-based spending | Weekly allowance income, student-focused categories, weekly allowance cards |
+| Employee | Salary-based spending | Monthly salary income, work-focused categories, next payday card |
+| Working student | Salary and allowance together | Monthly income, all categories, next payday and next allowance cards |
+| Something else | Freelancers, gigs, and irregular income | One-time income, all categories, monthly income vs. spending summary |
 
-Both are set in `config/database.php` and can be overridden from `.env`.
+The profile can be changed later on the Profile page. It controls the default income source, default income frequency, visible expense categories, visible income sources, and the budget label.
 
-### Resetting the database
+### 3. Dashboard
 
-```bash
-php artisan migrate:fresh --seed
-```
+`/dashboard` is the daily home page. It shows:
 
-This drops every table, re-runs all migrations, and re-seeds the test user. It is the
-fastest way to get back to a clean state.
+- The daily budget, how much has been spent, and how much remains.
+- Profile-specific insights:
+  - Allowance left this week and the next allowance for students.
+  - The next payday for employees.
+  - Both schedules for working students.
+  - Monthly income and spending for the “Something else” profile.
+- Today’s spending broken down by category.
+- A Chart.js doughnut chart showing the category mix.
+- A combined activity feed of today’s expenses and income.
+- Quick-add forms for setting the budget, adding an expense, and adding income.
+- Edit and delete actions for each transaction.
 
-The database file itself is ignored by git (`database/.gitignore` ignores `*.sqlite*`),
-so your local data is never committed.
+The dashboard only uses records dated today.
 
-### Migrating data from MySQL
+### 4. Income
 
-The `mysql` connection is still defined in `config/database.php`, so a one-off import
-from an old MySQL database is possible:
+Income records contain an amount, source, optional description, date, and frequency.
 
-1. Fill in the MySQL credentials in `.env` and comment out `DB_CONNECTION=sqlite`.
-2. Run your export/import queries.
-3. Switch `DB_CONNECTION` back to `sqlite`.
+- Sources include salary, allowance, freelance, business, scholarship, stipend, part-time work, gifts, refunds, and other.
+- Frequencies are one-time, weekly, monthly, and bi-monthly.
+- Monthly and bi-monthly income can store payday numbers.
+- Recurring income is used to calculate the next payday or next allowance.
+- Backdated income redirects to that date in the History page.
+- Income can be edited or deleted by its owner.
 
-## Tests
+### 5. Expenses and budget
 
-```bash
-php artisan test
-```
+Expenses contain an amount, description, category, payment method, and date.
 
-The test suite runs against an **in-memory** SQLite database (`phpunit.xml` sets
-`DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`), so it never touches your
-development database and needs no external database server.
+- Categories include food, transportation, bills, shopping, entertainment, school supplies, load and data, printing, org and projects, savings, and other.
+- Payment methods include cash, GCash, Maya, bank transfer, debit card, credit card, and other.
+- The daily budget is stored per date. Saving it again updates the existing budget for that day.
+- Expenses can be edited or deleted by their owner.
 
-## Project structure
+### 6. History
 
-```
-app/
-  Http/Controllers/
-    Auth/LoginController.php        Login and logout
-    Auth/RegisterController.php     Registration
-    ExpenseController.php           Budgets, expenses, daily view, CSV export
-  Models/
-    Expense.php                     An expense belonging to a user
-    DailyBudget.php                 A per-day budget belonging to a user
-    User.php                        User and their expenses / budgets
-database/
-  migrations/                       Schema (SQLite compatible)
-  seeders/                          Test user
-resources/views/
-  expenses/                         Dashboard and daily history pages
-  auth/                             Login and register pages
-routes/web.php                      All routes
-```
+`/daily` is the review page. It groups expenses, income, and budgets by date and shows:
 
-## Useful commands
+- Days tracked, total income, total spent, net amount, and average spending per day.
+- For each day: budget, amount spent, remaining budget, income, net, and all transactions.
+- Filters for transaction type, category, payment method, income source, frequency, and date range.
+- Presets for today, this week, this month, and all time.
+- CSV downloads for the filtered expenses and income.
 
-```bash
-php artisan migrate          # Run pending migrations
-php artisan migrate:fresh    # Rebuild the schema from scratch
-php artisan db:seed          # Seed the test user
-php artisan route:list       # List all routes
-php artisan tinker           # Interactive PHP console with the app booted
-```
+### 7. Profile
+
+`/profile` lets the user update their name, email address, and profile type.
+
+## Access and ownership
+
+- Laravel session authentication protects every page except the landing, registration, and login pages.
+- A user has many expenses, incomes, and daily budgets.
+- Every expense, income, and budget belongs to exactly one user.
+- Expense and income edit/delete actions check ownership and return `403` for another user’s record.
+- History and CSV exports query only the authenticated user’s records.
+
+## Technology
+
+- Laravel 12 and PHP 8.2
+- Blade templates with Tailwind CSS 4
+- Vite for frontend assets
+- Vanilla JavaScript for UI interactions
+- Chart.js for the dashboard category doughnut
+- SQLite as the default database
+
+## URL map
+
+| URL | Purpose |
+|---|---|
+| `GET /` | Landing page |
+| `GET /register` | Registration form |
+| `POST /register` | Create an account |
+| `GET /login` | Login form |
+| `POST /login` | Start a session |
+| `POST /logout` | End a session |
+| `GET /dashboard` | Today’s dashboard |
+| `GET /daily` | Filtered income and expense history |
+| `POST /budget` | Save or update today’s budget |
+| `POST /expenses` | Add an expense |
+| `GET /expenses/export` | Download filtered expenses as CSV |
+| `GET /expenses/{expense}/edit` | Edit form for an expense |
+| `PUT /expenses/{expense}` | Update an expense |
+| `DELETE /expenses/{expense}` | Delete an expense |
+| `POST /incomes` | Add income |
+| `GET /incomes/export` | Download filtered income as CSV |
+| `GET /incomes/{income}/edit` | Edit form for income |
+| `PUT /incomes/{income}` | Update income |
+| `DELETE /incomes/{income}` | Delete income |
+| `GET /profile` | Profile page |
+| `PUT /profile` | Update the profile |
