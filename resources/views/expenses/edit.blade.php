@@ -1,138 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Expense - Expense Tracker</title>
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body>
+@extends('layouts.app')
 
-    @php use App\Models\Expense; @endphp
+@section('title', 'Edit expense · Expense Tracker')
 
-    <main class="container">
+@section('content')
+    <div class="mx-auto max-w-xl">
+        <a href="{{ url()->previous() }}" class="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted outline-none transition hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/30">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Back
+        </a>
 
-        <header class="header">
-            <div>
-                <h1>Edit Expense</h1>
-                <p>Update the details of this expense.</p>
-            </div>
+        <div class="card p-5 sm:p-7">
+            <h1 class="text-xl font-semibold tracking-tight">Edit expense</h1>
+            <p class="mt-1 text-sm text-muted">Update the details of this expense.</p>
 
-            <div class="header-right">
-                <span id="currentDate">{{ now()->format('l, F j, Y') }}</span>
-
-                <nav class="nav-links">
-                    <a href="{{ route('expenses.index') }}" class="nav-link">Today</a>
-                    <a href="{{ route('expenses.daily') }}" class="nav-link">Daily Expenses</a>
-                </nav>
-
-                <div class="user-bar">
-                    <span>{{ auth()->user()->name }}</span>
-
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="logout-btn">Log out</button>
-                    </form>
-                </div>
-            </div>
-        </header>
-
-        <section class="card">
-            <h2>Expense Details</h2>
-
-            <form
-                action="{{ route('expenses.update', $expense) }}"
-                method="POST"
-            >
+            <form action="{{ route('expenses.update', $expense) }}" method="POST" class="mt-6 space-y-4">
                 @csrf
                 @method('PUT')
 
-                <label for="amount">Amount</label>
+                <x-ui.amount-input name="amount" label="Amount" :value="$expense->amount" />
 
-                <div class="amount-input">
-                    <span>₱</span>
+                <div>
+                    <label for="description" class="label">Description</label>
                     <input
-                        type="number"
-                        id="amount"
-                        name="amount"
-                        placeholder="0.00"
-                        min="0.01"
-                        step="0.01"
-                        value="{{ old('amount', $expense->amount) }}"
+                        id="description"
+                        name="description"
+                        type="text"
+                        maxlength="255"
                         required
+                        class="field"
+                        placeholder="What did you spend on?"
+                        value="{{ old('description', $expense->description) }}"
                     >
+
+                    @error('description')
+                        <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <p class="warning-text" id="amount-warning" hidden>
-                    Amount must be greater than ₱0.00.
-                </p>
+                <div>
+                    <span class="label">Category</span>
+                    <x-ui.category-chips :selected="$expense->category" />
 
-                @error('amount')
-                    <p class="error-text">{{ $message }}</p>
-                @enderror
+                    @error('category')
+                        <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                <label for="description">Description</label>
+                <div>
+                    <span class="label">Payment method</span>
+                    <x-ui.payment-method-chips :selected="$expense->payment_method" />
 
-                <input
-                    type="text"
-                    id="description"
-                    name="description"
-                    placeholder="What did you spend on?"
-                    value="{{ old('description', $expense->description) }}"
-                    required
-                >
+                    @error('payment_method')
+                        <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                @error('description')
-                    <p class="error-text">{{ $message }}</p>
-                @enderror
-
-                <label for="category">Category</label>
-
-                <select id="category" name="category" required>
-                    <option value="">Choose a category</option>
-
-                    @foreach (Expense::CATEGORIES as $category)
-
-                        <option
-                            value="{{ $category }}"
-                            {{ old('category', $expense->category) === $category ? 'selected' : '' }}
-                        >
-                            {{ $category }}
-                        </option>
-
-                    @endforeach
-
-                </select>
-
-                @error('category')
-                    <p class="error-text">{{ $message }}</p>
-                @enderror
-
-                <div class="form-actions">
-                    <button type="submit">Save Changes</button>
-                    <a href="{{ url()->previous() }}" class="cancel-link">Cancel</a>
+                <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                    <a href="{{ url()->previous() }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
                 </div>
             </form>
-        </section>
-
-    </main>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var amount = document.getElementById('amount');
-            var warning = document.getElementById('amount-warning');
-
-            function checkAmount() {
-                var value = parseFloat(amount.value);
-                var invalid = amount.value !== '' && (isNaN(value) || value <= 0);
-
-                warning.hidden = !invalid;
-            }
-
-            amount.addEventListener('input', checkAmount);
-            checkAmount();
-        });
-    </script>
-
-</body>
-</html>
+        </div>
+    </div>
+@endsection

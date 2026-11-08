@@ -1,64 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In - Expense Tracker</title>
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body>
+@extends('layouts.auth')
 
-    <main class="auth-wrapper">
-        <div class="card auth-card">
-            <h1>Welcome back</h1>
-            <p class="auth-subtitle">Log in to manage your daily spending.</p>
+@section('title', 'Log in · Expense Tracker')
 
-            <form action="{{ route('login') }}" method="POST">
-                @csrf
+@section('content')
+    <div class="card p-6 sm:p-8">
+        <h1 class="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        <p class="mt-1.5 text-sm text-muted">Log in to keep an eye on today's spending.</p>
 
-                <label for="email">Email</label>
+        <form action="{{ route('login') }}" method="POST" class="mt-6 space-y-4">
+            @csrf
 
+            <div>
+                <label for="email" class="label">Email</label>
                 <input
-                    type="email"
                     id="email"
                     name="email"
+                    type="email"
                     value="{{ old('email') }}"
-                    placeholder="you@example.com"
+                    placeholder="juandelacruz@email.com"
+                    autocomplete="email"
                     required
                     autofocus
+                    @class(['field', 'border-danger focus:border-danger focus:ring-danger/15' => $errors->has('email')])
                 >
 
                 @error('email')
-                    <p class="error-text">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
+            </div>
 
-                <label for="password">Password</label>
+            <div>
+                <label for="password" class="label">Password</label>
 
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Your password"
-                    required
-                >
+                <div class="relative">
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="Your password"
+                        autocomplete="current-password"
+                        required
+                        class="field pr-12"
+                    >
+
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-1 my-auto grid h-9 w-9 place-items-center rounded-control text-muted outline-none transition hover:text-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+                        data-toggle-password="password"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                    >
+                        <i class="bi bi-eye" data-eye aria-hidden="true"></i>
+                        <i class="bi bi-eye-slash hidden" data-eye-off aria-hidden="true"></i>
+                    </button>
+                </div>
 
                 @error('password')
-                    <p class="error-text">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
+            </div>
 
-                <label class="remember-row">
-                    <input type="checkbox" name="remember" value="1">
-                    Remember me
-                </label>
+            <label class="flex cursor-pointer items-center gap-2.5 text-sm text-muted">
+                <input
+                    type="checkbox"
+                    name="remember"
+                    value="1"
+                    class="h-4 w-4 rounded border-line text-brand outline-none focus:ring-2 focus:ring-brand/20"
+                >
+                Remember me
+            </label>
 
-                <button type="submit">Log In</button>
-            </form>
+            <button type="submit" class="btn btn-primary w-full">Log in</button>
+        </form>
 
-            <p class="auth-link">
-                Don't have an account? <a href="{{ route('register') }}">Register</a>
-            </p>
-        </div>
-    </main>
-
-</body>
-</html>
+        <p class="mt-6 text-center text-sm text-muted">
+            Don't have an account?
+            <a href="{{ route('register') }}" class="font-semibold text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand/30">Create one</a>
+        </p>
+    </div>
+@endsection

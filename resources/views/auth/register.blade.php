@@ -1,84 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Expense Tracker</title>
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body>
+@extends('layouts.auth')
 
-    <main class="auth-wrapper">
-        <div class="card auth-card">
-            <h1>Create your account</h1>
-            <p class="auth-subtitle">Start tracking your daily spending.</p>
+@section('title', 'Register · Expense Tracker')
 
-            <form action="{{ route('register') }}" method="POST">
-                @csrf
+@section('content')
+    <div class="card p-6 sm:p-8">
+        <h1 class="text-2xl font-semibold tracking-tight">Create your account</h1>
+        <p class="mt-1.5 text-sm text-muted">Start tracking your daily spending in seconds.</p>
 
-                <label for="name">Name</label>
+        <form action="{{ route('register') }}" method="POST" class="mt-6 space-y-4">
+            @csrf
 
+            <div>
+                <label for="name" class="label">Name</label>
                 <input
-                    type="text"
                     id="name"
                     name="name"
+                    type="text"
                     value="{{ old('name') }}"
                     placeholder="Juan Dela Cruz"
+                    autocomplete="name"
+                    maxlength="255"
                     required
                     autofocus
+                    @class(['field', 'border-danger focus:border-danger focus:ring-danger/15' => $errors->has('name')])
                 >
 
                 @error('name')
-                    <p class="error-text">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
+            </div>
 
-                <label for="email">Email</label>
-
+            <div>
+                <label for="email" class="label">Email</label>
                 <input
-                    type="email"
                     id="email"
                     name="email"
+                    type="email"
                     value="{{ old('email') }}"
-                    placeholder="you@example.com"
+                    placeholder="juandelacruz@email.com"
+                    autocomplete="email"
+                    maxlength="255"
                     required
+                    @class(['field', 'border-danger focus:border-danger focus:ring-danger/15' => $errors->has('email')])
                 >
 
                 @error('email')
-                    <p class="error-text">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
+            </div>
 
-                <label for="password">Password</label>
+            <x-ui.profile-type-chips />
 
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="At least 8 characters"
-                    required
-                >
+            <div>
+                <label for="password" class="label">Password</label>
+
+                <div class="relative">
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="At least 8 characters"
+                        autocomplete="new-password"
+                        required
+                        class="field pr-12"
+                    >
+
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-1 my-auto grid h-9 w-9 place-items-center rounded-control text-muted outline-none transition hover:text-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+                        data-toggle-password="password"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                    >
+                        <i class="bi bi-eye" data-eye aria-hidden="true"></i>
+                        <i class="bi bi-eye-slash hidden" data-eye-off aria-hidden="true"></i>
+                    </button>
+                </div>
 
                 @error('password')
-                    <p class="error-text">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
+            </div>
 
-                <label for="password_confirmation">Confirm Password</label>
+            <div>
+                <label for="password_confirmation" class="label">Confirm password</label>
 
-                <input
-                    type="password"
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    placeholder="Re-enter your password"
-                    required
-                >
+                <div class="relative">
+                    <input
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        type="password"
+                        placeholder="Re-enter your password"
+                        autocomplete="new-password"
+                        required
+                        class="field pr-12"
+                    >
 
-                <button type="submit">Register</button>
-            </form>
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-1 my-auto grid h-9 w-9 place-items-center rounded-control text-muted outline-none transition hover:text-brand focus-visible:ring-2 focus-visible:ring-brand/30"
+                        data-toggle-password="password_confirmation"
+                        aria-label="Show password confirmation"
+                        aria-pressed="false"
+                    >
+                        <i class="bi bi-eye" data-eye aria-hidden="true"></i>
+                        <i class="bi bi-eye-slash hidden" data-eye-off aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
 
-            <p class="auth-link">
-                Already have an account? <a href="{{ route('login') }}">Log in</a>
-            </p>
-        </div>
-    </main>
+            <button type="submit" class="btn btn-primary w-full">Create account</button>
+        </form>
 
-</body>
-</html>
+        <p class="mt-6 text-center text-sm text-muted">
+            Already have an account?
+            <a href="{{ route('login') }}" class="font-semibold text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand/30">Log in</a>
+        </p>
+    </div>
+@endsection
