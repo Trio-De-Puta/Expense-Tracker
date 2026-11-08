@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ProfileType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -18,6 +19,10 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $user = $request->user();
+
+        if (is_string($email = $request->input('email'))) {
+            $request->merge(['email' => Str::lower(trim($email))]);
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
