@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'History · Expense Tracker')
+@section('title', 'Expense History · Expense Tracker')
 
 @section('content')
     @php
@@ -20,7 +20,8 @@
             $activeRange = 'month';
         }
 
-        $hasFilters = request()->hasAny(['type', 'category', 'payment_method', 'source', 'frequency', 'from', 'to']);
+        $hasFilters = request()->hasAny(['category', 'payment_method', 'from', 'to']);
+        $dateQuery = request()->only(['from', 'to']);
 
         $presets = [
             ['key' => 'today', 'label' => 'Today', 'from' => $today, 'to' => $today],
@@ -36,31 +37,38 @@
                 <p class="text-xs font-medium uppercase tracking-[0.14em] text-muted">
                     {{ now()->format('l, F j, Y') }}
                 </p>
-                <h1 class="mt-1.5 text-2xl font-semibold tracking-tight">History</h1>
-                <p class="mt-1 text-sm text-muted">Review your money, day by day.</p>
+                <h1 class="mt-1.5 text-2xl font-semibold tracking-tight">Expense History</h1>
+                <p class="mt-1 text-sm text-muted">Review your spending, day by day.</p>
             </div>
 
-            <div class="hidden items-center gap-2 lg:flex">
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="inline-flex rounded-control border border-line bg-surface p-1">
+                    <a
+                        href="{{ route('history.expenses', $dateQuery) }}"
+                        class="rounded-[0.4rem] px-3 py-1.5 text-xs font-semibold text-brand"
+                        aria-current="page"
+                    >
+                        Expenses
+                    </a>
+                    <a
+                        href="{{ route('history.income', $dateQuery) }}"
+                        class="rounded-[0.4rem] px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-ink"
+                    >
+                        Income
+                    </a>
+                </div>
+
                 <a href="{{ route('expenses.export', request()->query()) }}" class="btn btn-secondary">
                     <i class="bi bi-receipt" aria-hidden="true"></i>
                     Expenses CSV
                 </a>
-                <a href="{{ route('incomes.export', request()->query()) }}" class="btn btn-secondary">
-                    <i class="bi bi-cash-stack" aria-hidden="true"></i>
-                    Income CSV
-                </a>
             </div>
         </header>
 
-        <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div class="card p-4 [&>strong]:mt-1 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-semibold [&>strong]:tabular-nums sm:p-5">
                 <span class="block text-xs font-medium uppercase tracking-wide text-muted">Days Tracked</span>
                 <strong>{{ $summary['days'] }}</strong>
-            </div>
-
-            <div class="card p-4 [&>strong]:mt-1 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-semibold [&>strong]:tabular-nums [&>strong]:text-success-ink sm:p-5">
-                <span class="block text-xs font-medium uppercase tracking-wide text-muted">Total Income</span>
-                <strong>₱{{ number_format($summary['income'], 2) }}</strong>
             </div>
 
             <div class="card p-4 [&>strong]:mt-1 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-semibold [&>strong]:tabular-nums sm:p-5">
@@ -68,23 +76,19 @@
                 <strong>₱{{ number_format($summary['total'], 2) }}</strong>
             </div>
 
-            <div @class([
-                'card p-4 [&>strong]:mt-1 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-semibold [&>strong]:tabular-nums sm:p-5',
-                '[&>strong]:text-success-ink' => $summary['net'] >= 0,
-                '[&>strong]:text-danger' => $summary['net'] < 0,
-            ])>
-                <span class="block text-xs font-medium uppercase tracking-wide text-muted">Net</span>
-                <strong>{{ $summary['net'] < 0 ? '-₱' : '₱' }}{{ number_format(abs($summary['net']), 2) }}</strong>
-            </div>
-
             <div class="card p-4 [&>strong]:mt-1 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-semibold [&>strong]:tabular-nums sm:p-5">
                 <span class="block text-xs font-medium uppercase tracking-wide text-muted">Average Per Day</span>
                 <strong>₱{{ number_format($summary['average'], 2) }}</strong>
             </div>
+
+            <div class="card p-4 [&>strong]:mt-1 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-semibold [&>strong]:tabular-nums sm:p-5">
+                <span class="block text-xs font-medium uppercase tracking-wide text-muted">Over-budget Days</span>
+                <strong>{{ $summary['over_budget'] }}</strong>
+            </div>
         </section>
 
         <section class="card p-4 sm:p-5">
-            <form action="{{ route('expenses.daily') }}" method="GET" class="space-y-4">
+            <form action="{{ route('history.expenses') }}" method="GET" class="space-y-4">
                 <div class="flex flex-wrap gap-2">
                     @foreach ($presets as $preset)
                         <button
@@ -103,18 +107,9 @@
                     @endforeach
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                        <label for="filter-type" class="label">Type</label>
-                        <select id="filter-type" name="type" class="field">
-                            <option value="all" @selected(($filters['type'] ?? 'all') === 'all')>All transactions</option>
-                            <option value="expenses" @selected(($filters['type'] ?? null) === 'expenses')>Expenses only</option>
-                            <option value="income" @selected(($filters['type'] ?? null) === 'income')>Income only</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="filter-category" class="label">Expense category</label>
+                        <label for="filter-category" class="label">Category</label>
                         <select id="filter-category" name="category" class="field">
                             <option value="">All categories</option>
                             @foreach (\App\Models\Expense::CATEGORIES as $category)
@@ -138,32 +133,6 @@
                     </div>
 
                     <div>
-                        <label for="filter-source" class="label">Income source</label>
-                        <select id="filter-source" name="source" class="field">
-                            <option value="">All sources</option>
-                            @foreach (\App\Models\Income::SOURCES as $source)
-                                <option value="{{ $source }}" @selected(($filters['source'] ?? null) === $source)>
-                                    {{ $source }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="filter-frequency" class="label">Frequency</label>
-                        <select id="filter-frequency" name="frequency" class="field">
-                            <option value="">All frequencies</option>
-                            @foreach (\App\Models\Income::FREQUENCIES as $value => $label)
-                                <option value="{{ $value }}" @selected(($filters['frequency'] ?? null) === $value)>
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                    <div>
                         <label for="filter-from" class="label">From</label>
                         <input type="date" id="filter-from" name="from" value="{{ $filters['from'] ?? '' }}" class="field">
                     </div>
@@ -172,31 +141,20 @@
                         <label for="filter-to" class="label">To</label>
                         <input type="date" id="filter-to" name="to" value="{{ $filters['to'] ?? '' }}" class="field">
                     </div>
-
-                    <div class="flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-1 sm:flex-none">Apply</button>
-
-                        @if ($hasFilters)
-                            <a href="{{ route('expenses.daily') }}" class="btn btn-secondary">Clear</a>
-                        @endif
-                    </div>
                 </div>
 
-                <p class="text-xs text-muted">Category and payment method narrow expenses; source and frequency narrow income.</p>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary sm:flex-none">Apply</button>
 
-                @error('type')
-                    <p class="text-xs font-medium text-danger">{{ $message }}</p>
-                @enderror
+                    @if ($hasFilters)
+                        <a href="{{ route('history.expenses') }}" class="btn btn-secondary">Clear</a>
+                    @endif
+                </div>
+
                 @error('category')
                     <p class="text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
                 @error('payment_method')
-                    <p class="text-xs font-medium text-danger">{{ $message }}</p>
-                @enderror
-                @error('source')
-                    <p class="text-xs font-medium text-danger">{{ $message }}</p>
-                @enderror
-                @error('frequency')
                     <p class="text-xs font-medium text-danger">{{ $message }}</p>
                 @enderror
                 @error('from')
@@ -211,16 +169,21 @@
         @if ($days->isEmpty())
             <section class="card">
                 <x-ui.empty-state
-                    icon="bi-journal-text"
-                    title="Nothing to show yet"
-                    description="No transactions or budgets match this view. Add an expense or income, or clear your filters."
-                />
+                    icon="bi-receipt"
+                    title="No expenses to show yet"
+                    description="No expense history matches this view. Add an expense or clear your filters."
+                >
+                    <div class="mt-5 flex flex-wrap justify-center gap-2">
+                        <button type="button" data-sheet-open="quick-add" class="btn btn-primary">
+                            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                            Add expense
+                        </button>
 
-                @if ($hasFilters)
-                    <div class="flex justify-center pb-8">
-                        <a href="{{ route('expenses.daily') }}" class="btn btn-secondary">Clear filters</a>
+                        @if ($hasFilters)
+                            <a href="{{ route('history.expenses') }}" class="btn btn-secondary">Clear filters</a>
+                        @endif
                     </div>
-                @endif
+                </x-ui.empty-state>
             </section>
         @else
             <div class="space-y-3">
@@ -237,19 +200,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-semibold">{{ $day['label'] }}</p>
                                 <p class="mt-0.5 text-xs text-muted">
-                                    {{ $day['transactions']->count() }} {{ Str::plural('transaction', $day['transactions']->count()) }}
-                                </p>
-                                <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
-                                    <span>
-                                        Income
-                                        <span class="font-semibold text-success-ink">+₱{{ number_format($day['income'], 2) }}</span>
-                                    </span>
-                                    <span>
-                                        Net
-                                        <span class="font-semibold {{ $day['net'] < 0 ? 'text-danger' : 'text-ink' }}">
-                                            {{ $day['net'] < 0 ? '-₱' : '₱' }}{{ number_format(abs($day['net']), 2) }}
-                                        </span>
-                                    </span>
+                                    {{ $day['expenses']->count() }} {{ Str::plural('expense', $day['expenses']->count()) }}
                                 </p>
                             </div>
 
@@ -281,38 +232,23 @@
                             @endif
                         </summary>
 
-                        @if ($day['transactions']->isEmpty())
+                        @if ($day['expenses']->isEmpty())
                             <div class="border-t border-line px-4 py-6 text-center text-sm text-muted sm:px-5">
-                                No transactions recorded for this day.
+                                No expenses recorded for this day.
                             </div>
                         @else
                             <div class="divide-y divide-line border-t border-line">
-                                @foreach ($day['transactions'] as $item)
-                                    @php $entry = $item['model']; @endphp
-
-                                    @if ($item['type'] === 'income')
-                                        <x-ui.transaction-row
-                                            type="income"
-                                            :title="$entry->label()"
-                                            :meta="'Income · '.$entry->source.' · '.$entry->frequencyLabel()"
-                                            :amount="$entry->amount"
-                                            :source="$entry->source"
-                                            :edit-url="route('incomes.edit', $entry)"
-                                            :delete-url="route('incomes.destroy', $entry)"
-                                            :compact="true"
-                                        />
-                                    @else
-                                        <x-ui.transaction-row
-                                            type="expense"
-                                            :title="$entry->description"
-                                            :meta="$entry->category.' · '.$entry->payment_method"
-                                            :amount="$entry->amount"
-                                            :category="$entry->category"
-                                            :edit-url="route('expenses.edit', $entry)"
-                                            :delete-url="route('expenses.destroy', $entry)"
-                                            :compact="true"
-                                        />
-                                    @endif
+                                @foreach ($day['expenses'] as $expense)
+                                    <x-ui.transaction-row
+                                        type="expense"
+                                        :title="$expense->description"
+                                        :meta="$expense->category.' · '.$expense->payment_method"
+                                        :amount="$expense->amount"
+                                        :category="$expense->category"
+                                        :edit-url="route('expenses.edit', $expense)"
+                                        :delete-url="route('expenses.destroy', $expense)"
+                                        :compact="true"
+                                    />
                                 @endforeach
                             </div>
                         @endif

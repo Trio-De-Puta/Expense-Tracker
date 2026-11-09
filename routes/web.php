@@ -27,8 +27,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [ExpenseController::class, 'index'])
         ->name('expenses.index');
 
-    Route::get('/daily', [ExpenseController::class, 'daily'])
-        ->name('expenses.daily');
+    Route::get('/history/expenses', [ExpenseController::class, 'history'])
+        ->name('history.expenses');
+
+    Route::get('/history/income', [IncomeController::class, 'history'])
+        ->name('history.income');
+
+    Route::redirect('/daily', '/history/expenses');
 
     Route::post('/budget', [ExpenseController::class, 'storeBudget'])
         ->name('budget.store');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Income;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -17,12 +18,58 @@ class IncomeController extends Controller
 
         $redirect = $validated['income_date'] === now()->toDateString()
             ? redirect()->route('expenses.index')
-            : redirect()->route('expenses.daily', [
+            : redirect()->route('history.income', [
                 'from' => $validated['income_date'],
                 'to' => $validated['income_date'],
             ]);
 
         return $redirect->with('status', 'Income added.');
+    }
+
+    public function history(Request $request)
+    {
+        $filters = $request->validate([
+            'source' => ['nullable', 'string', Rule::in(Income::SOURCES)],
+            'frequency' => ['nullable', 'string', Rule::in(array_keys(Income::FREQUENCIES))],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+
+        $incomes = $this->applyFilters(auth()->user()->incomes(), $filters)
+            ->orderByDesc('income_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $groupedIncomes = $incomes->groupBy(fn ($income) => $income->income_date->toDateString());
+
+        $days = $groupedIncomes->keys()
+            ->sort()
+            ->reverse()
+            ->map(function ($date) use ($groupedIncomes) {
+                $dayIncomes = $groupedIncomes->get($date, collect());
+
+                return [
+                    'date' => $date,
+                    'label' => $date === now()->toDateString()
+                        ? 'Today, '.now()->format('F j, Y')
+                        : Carbon::parse($date)->format('l, F j, Y'),
+                    'total' => $dayIncomes->sum('amount'),
+                    'incomes' => $dayIncomes,
+                ];
+            })
+            ->values();
+
+        $totalIncome = $incomes->sum('amount');
+        $dayCount = $days->count();
+
+        $summary = [
+            'days' => $dayCount,
+            'total' => $totalIncome,
+            'average' => $dayCount > 0 ? $totalIncome / $dayCount : 0,
+            'entries' => $incomes->count(),
+        ];
+
+        return view('history.income', compact('days', 'summary', 'filters'));
     }
 
     public function edit(Income $income)

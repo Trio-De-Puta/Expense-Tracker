@@ -52,7 +52,7 @@ class IncomeTrackerTest extends TestCase
                 'income_date' => $yesterday,
                 'frequency' => 'one_time',
             ])
-            ->assertRedirect(route('expenses.daily', ['from' => $yesterday, 'to' => $yesterday]));
+            ->assertRedirect(route('history.income', ['from' => $yesterday, 'to' => $yesterday]));
 
         $income = Income::where('user_id', $user->id)->first();
 
@@ -229,7 +229,7 @@ class IncomeTrackerTest extends TestCase
             ->assertSee('data-greeting', false);
     }
 
-    public function test_history_shows_income_and_net_totals(): void
+    public function test_income_history_shows_income_totals_without_expenses(): void
     {
         $user = User::factory()->create();
         $yesterday = now()->subDay()->toDateString();
@@ -257,17 +257,25 @@ class IncomeTrackerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/daily')
+            ->get('/history/income')
             ->assertOk()
             ->assertSee('Total Income')
-            ->assertSee('Net')
             ->assertSee('Paid invoice')
-            ->assertSee('Groceries')
             ->assertSee('+₱500.00')
-            ->assertSee('₱300.00');
+            ->assertDontSee('Groceries')
+            ->assertDontSee('Total Spent');
+
+        $this->actingAs($user)
+            ->get('/history/expenses')
+            ->assertOk()
+            ->assertSee('Total Spent')
+            ->assertSee('Groceries')
+            ->assertSee('₱300.00')
+            ->assertDontSee('Paid invoice')
+            ->assertDontSee('Total Income');
     }
 
-    public function test_history_filters_by_type_and_income_source(): void
+    public function test_income_history_filters_by_source_and_frequency(): void
     {
         $user = User::factory()->create();
 
@@ -299,36 +307,29 @@ class IncomeTrackerTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/daily?type=income')
+            ->get('/history/income')
             ->assertOk()
             ->assertSee('Salary credited')
             ->assertSee('Birthday money')
             ->assertDontSee('Lunch');
 
         $this->actingAs($user)
-            ->get('/daily?type=income&source=Gift')
+            ->get('/history/income?source=Gift')
             ->assertOk()
             ->assertSee('Birthday money')
             ->assertDontSee('Salary credited');
 
         $this->actingAs($user)
-            ->get('/daily?type=income&frequency=monthly')
+            ->get('/history/income?frequency=monthly')
             ->assertOk()
             ->assertSee('Salary credited')
             ->assertDontSee('Birthday money');
 
         $this->actingAs($user)
-            ->get('/daily?type=income&frequency=one_time')
+            ->get('/history/income?frequency=one_time')
             ->assertOk()
             ->assertSee('Birthday money')
             ->assertDontSee('Salary credited');
-
-        $this->actingAs($user)
-            ->get('/daily?type=expenses')
-            ->assertOk()
-            ->assertSee('Lunch')
-            ->assertDontSee('Salary credited')
-            ->assertDontSee('Birthday money');
     }
 
     public function test_recurring_income_schedule_is_stored(): void

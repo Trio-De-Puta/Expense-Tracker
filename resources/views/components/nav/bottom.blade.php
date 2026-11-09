@@ -25,13 +25,13 @@
         </div>
 
         <a
-            href="{{ route('expenses.daily') }}"
+            href="{{ route('history.expenses') }}"
             @class([
                 'flex flex-col items-center gap-1 rounded-control px-2 py-1.5 text-[11px] font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-brand/30',
-                'text-brand' => request()->routeIs('expenses.daily'),
-                'text-muted hover:text-ink' => ! request()->routeIs('expenses.daily'),
+                'text-brand' => request()->routeIs('history.*'),
+                'text-muted hover:text-ink' => ! request()->routeIs('history.*'),
             ])
-            @if (request()->routeIs('expenses.daily')) aria-current="page" @endif
+            @if (request()->routeIs('history.*')) aria-current="page" @endif
         >
             <i class="bi bi-clock-history text-lg" aria-hidden="true"></i>
             History

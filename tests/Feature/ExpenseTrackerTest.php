@@ -415,7 +415,7 @@ class ExpenseTrackerTest extends TestCase
         $this->assertSame('Cash', $expense->fresh()->payment_method);
     }
 
-    public function test_daily_page_shows_each_day_with_totals(): void
+    public function test_expense_history_shows_each_day_with_totals(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -444,7 +444,7 @@ class ExpenseTrackerTest extends TestCase
             'expense_date' => now()->toDateString(),
         ]);
 
-        $this->get('/daily')
+        $this->get('/history/expenses')
             ->assertOk()
             ->assertSee('Bus fare')
             ->assertSee('Coffee')
@@ -570,7 +570,7 @@ class ExpenseTrackerTest extends TestCase
             ->assertSessionHasErrors('amount');
     }
 
-    public function test_daily_page_filters_by_category_and_date_range(): void
+    public function test_expense_history_filters_by_category_and_date_range(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -593,23 +593,23 @@ class ExpenseTrackerTest extends TestCase
             'expense_date' => now()->toDateString(),
         ]);
 
-        $this->get('/daily?category=Transportation')
+        $this->get('/history/expenses?category=Transportation')
             ->assertOk()
             ->assertSee('Bus fare')
             ->assertDontSee('Movie night');
 
-        $this->get('/daily?payment_method=GCash')
+        $this->get('/history/expenses?payment_method=GCash')
             ->assertOk()
             ->assertSee('Movie night')
             ->assertDontSee('Bus fare');
 
-        $this->get('/daily?from='.now()->toDateString().'&to='.now()->toDateString())
+        $this->get('/history/expenses?from='.now()->toDateString().'&to='.now()->toDateString())
             ->assertOk()
             ->assertSee('Movie night')
             ->assertDontSee('Bus fare');
     }
 
-    public function test_daily_page_date_filter_excludes_budgets_outside_the_range(): void
+    public function test_expense_history_date_filter_excludes_budgets_outside_the_range(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -637,7 +637,7 @@ class ExpenseTrackerTest extends TestCase
             'expense_date' => $inside,
         ]);
 
-        $response = $this->get('/daily?from='.$inside.'&to='.$inside)->assertOk();
+        $response = $this->get('/history/expenses?from='.$inside.'&to='.$inside)->assertOk();
 
         $response->assertDontSee('111.00');
         $response->assertSee('500.00');

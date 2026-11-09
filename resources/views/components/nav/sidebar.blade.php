@@ -1,7 +1,8 @@
 @php
     $navItems = [
         ['route' => 'expenses.index', 'label' => 'Today', 'icon' => 'bi-calendar2-check'],
-        ['route' => 'expenses.daily', 'label' => 'History', 'icon' => 'bi-clock-history'],
+        ['route' => 'history.expenses', 'label' => 'Expense history', 'icon' => 'bi-receipt'],
+        ['route' => 'history.income', 'label' => 'Income history', 'icon' => 'bi-cash-stack'],
     ];
 @endphp
 
